@@ -1,166 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Free Video Search & Download</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
-<style>
-body{
-    margin:0;
-    font-family:Arial,Helvetica,sans-serif;
-    background:#0f172a;
-    color:white;
-}
-header{
-    background:#020617;
-    padding:14px;
-    text-align:center;
-    font-size:20px;
-    font-weight:bold;
-}
-.searchbar{
-    display:flex;
-    gap:8px;
-    padding:10px;
-}
-input{
-    flex:1;
-    padding:12px;
-    border:none;
-    border-radius:6px;
-    font-size:16px;
-}
-button{
-    padding:12px 14px;
-    border:none;
-    border-radius:6px;
-    background:#2563eb;
-    color:white;
-    font-size:15px;
-}
-
-.categories{
-    display:flex;
-    gap:8px;
-    overflow-x:auto;
-    padding:10px;
-}
-.categories button{
-    background:#1e293b;
-    white-space:nowrap;
-}
-
-#results{
-    padding:10px;
-}
-
-.card{
-    background:#020617;
-    border-radius:10px;
-    margin-bottom:12px;
-    overflow:hidden;
-}
-
-.thumb{
-    width:100%;
-    height:180px;
-    object-fit:cover;
-    background:black;
-}
-
-.info{
-    padding:10px;
-}
-
-.info h4{
-    margin:0 0 6px 0;
-    font-size:15px;
-}
-
-.actions{
-    display:flex;
-    gap:10px;
-    margin-top:8px;
-}
-
-.actions a{
-    flex:1;
-    text-align:center;
-    padding:8px;
-    background:#1e40af;
-    border-radius:6px;
-    text-decoration:none;
-    color:white;
-    font-size:14px;
-}
-
-#playerBox{
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,0.8);
-    display:none;
-    align-items:center;
-    justify-content:center;
-    z-index:999;
-}
-
-.player{
-    width:95%;
-    max-width:720px;
-    background:black;
-    border-radius:10px;
-    overflow:hidden;
-}
-
-.player iframe{
-    width:100%;
-    height:300px;
-    border:0;
-}
-
-.closeBtn{
-    text-align:right;
-    padding:6px;
-    background:#020617;
-}
-.closeBtn button{
-    background:#dc2626;
-}
-</style>
-</head>
-<body>
-
-<header>
-Free Video Search & Download (Legal)
-</header>
-
-<div class="searchbar">
-<input id="q" placeholder="Search by video title...">
-<button onclick="search()">Search</button>
-</div>
-
-<div class="categories">
-<button onclick="quick('documentary')">Documentary</button>
-<button onclick="quick('education')">Education</button>
-<button onclick="quick('nature')">Nature</button>
-<button onclick="quick('history')">History</button>
-<button onclick="quick('science')">Science</button>
-</div>
-
-<div id="results"></div>
-
-<div id="playerBox">
-    <div class="player">
-        <div class="closeBtn">
-            <button onclick="closePlayer()">Close</button>
-        </div>
-        <iframe id="playerFrame" allowfullscreen></iframe>
-    </div>
-</div>
-
 <script>
-
 function quick(q){
     document.getElementById("q").value = q;
     search();
@@ -171,9 +9,15 @@ async function search(){
     const query = document.getElementById("q").value.trim();
     if(!query) return;
 
+    // words ko alag alag karna
+    const words = query.split(/\s+/).filter(w => w.length > 1);
+
+    // title based flexible query
+    let titleQuery = words.map(w => `title:(${w}*)`).join(" OR ");
+
     const api =
       "https://archive.org/advancedsearch.php?q="
-      + encodeURIComponent('title:("' + query + '") AND mediatype:(movies)')
+      + encodeURIComponent("(" + titleQuery + ") AND mediatype:(movies)")
       + "&fl[]=identifier&fl[]=title"
       + "&rows=20&page=1&output=json";
 
@@ -185,7 +29,7 @@ async function search(){
     box.innerHTML = "";
 
     if(!list.length){
-        box.innerHTML = "<p>No matching video found.</p>";
+        box.innerHTML = "<p>No similar video found.</p>";
         return;
     }
 
@@ -210,7 +54,6 @@ async function search(){
         `;
 
         box.appendChild(div);
-
     });
 
 }
@@ -228,8 +71,4 @@ function closePlayer(){
     frame.src="";
     box.style.display="none";
 }
-
 </script>
-
-</body>
-</html>
