@@ -2,48 +2,95 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>All-in-One Student Tools</title>
+<title>SkillForge – Free Student Tools</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
-body{margin:0;font-family:Arial;background:#0f172a;color:white}
-header{padding:12px;background:#020617;text-align:center;font-size:18px;font-weight:bold}
+:root{
+--bg:#0f172a;
+--card:#020617;
+--main:#2563eb;
+}
+body{margin:0;font-family:Segoe UI,Arial;background:var(--bg);color:#fff}
+header{
+display:flex;align-items:center;gap:10px;
+padding:12px 16px;background:#020617;font-size:18px;font-weight:600
+}
+.logo{
+width:36px;height:36px;border-radius:8px;
+background:linear-gradient(135deg,#3b82f6,#06b6d4);
+display:flex;align-items:center;justify-content:center;
+font-weight:bold
+}
+
 nav{display:flex;background:#020617}
-nav button{flex:1;padding:12px;border:0;background:#020617;color:white}
-nav button.active{background:#2563eb}
-section{display:none;padding:12px}
-input,textarea{width:100%;padding:8px;border-radius:5px;border:0;margin-bottom:6px}
-.toolBox{background:#020617;padding:10px;border-radius:8px}
-#cvPreview{background:white;color:black;padding:10px;border-radius:6px}
-canvas{max-width:100%;border-radius:8px;background:#000}
+nav button{flex:1;padding:12px;border:0;background:#020617;color:#fff}
+nav button.active{background:var(--main)}
+
+section{display:none;padding:14px}
+.card{background:var(--card);border-radius:12px;padding:12px;margin-bottom:14px}
+input,textarea,select{
+width:100%;padding:10px;border-radius:6px;border:0;margin:6px 0
+}
+button{
+padding:10px 14px;border:0;border-radius:6px;
+background:var(--main);color:#fff
+}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#cvPreview{
+background:#fff;color:#000;border-radius:8px;padding:12px
+}
+
+.cv-template-2 h2{color:#2563eb}
+.cv-template-2{border-left:6px solid #2563eb;padding-left:10px}
+
+canvas{max-width:100%;border-radius:10px;background:#000}
+.badge{font-size:12px;color:#93c5fd}
 </style>
 </head>
 <body>
 
-<header>All-in-One Student Tools</header>
+<header>
+<div class="logo">SF</div>
+<div>
+SkillForge Tools
+<div class="badge">Resume • Thumbnail • PDF</div>
+</div>
+</header>
 
 <nav>
 <button id="t1" class="active" onclick="showTab(1)">Resume</button>
 <button id="t2" onclick="showTab(2)">Thumbnail</button>
-<button id="t3" onclick="showTab(3)">PDF Tools</button>
+<button id="t3" onclick="showTab(3)">PDF</button>
 </nav>
 
-<!-- ================= Resume Maker ================= -->
+<!-- ================= Resume ================= -->
 
 <section id="tab1" style="display:block">
-<div class="toolBox">
-<h3>Resume Maker</h3>
 
-<input id="name" placeholder="Your Name">
+<div class="card">
+<h3>Resume Template</h3>
+<select id="cvTemplate" onchange="updateCV()">
+<option value="1">Classic Resume</option>
+<option value="2">Modern Resume</option>
+</select>
+</div>
+
+<div class="card">
+<div class="grid">
+<input id="name" placeholder="Full Name">
 <input id="email" placeholder="Email">
-<textarea id="skills" placeholder="Skills (comma separated)"></textarea>
+</div>
+<textarea id="skills" placeholder="Skills"></textarea>
 <textarea id="education" placeholder="Education"></textarea>
 
 <button onclick="updateCV()">Preview</button>
 <button onclick="downloadCV()">Download PDF</button>
+</div>
 
-<hr>
+<div class="card">
 <div id="cvPreview">
 <h2 id="pName">Your Name</h2>
 <p id="pEmail"></p>
@@ -53,40 +100,44 @@ canvas{max-width:100%;border-radius:8px;background:#000}
 <p id="pEdu"></p>
 </div>
 </div>
+
 </section>
 
-<!-- ================= Thumbnail Maker ================= -->
+<!-- ================= Thumbnail ================= -->
 
 <section id="tab2">
-<div class="toolBox">
-<h3>Thumbnail / Poster Maker</h3>
 
+<div class="card">
+<h3>Thumbnail Style</h3>
+<select id="thumbStyle">
+<option value="1">YouTube Bold</option>
+<option value="2">Clean Minimal</option>
+</select>
+</div>
+
+<div class="card">
 <input type="file" accept="image/*" onchange="loadImage(event)">
-<input id="thumbText" placeholder="Text on thumbnail">
-<button onclick="drawText()">Add Text</button>
+<input id="thumbText" placeholder="Main text">
+<button onclick="drawThumb()">Apply Template</button>
 <button onclick="downloadThumb()">Download PNG</button>
-
 <br><br>
 <canvas id="canvas" width="640" height="360"></canvas>
 </div>
+
 </section>
 
-<!-- ================= PDF Tools ================= -->
+<!-- ================= PDF ================= -->
 
 <section id="tab3">
-<div class="toolBox">
+<div class="card">
 <h3>Images to PDF</h3>
 <input type="file" multiple accept="image/*" id="imgPdf">
-<button onclick="imagesToPDF()">Convert & Download PDF</button>
-<p style="font-size:13px;color:#cbd5e1">
-(All processing happens in your browser)
-</p>
+<button onclick="imagesToPDF()">Convert to PDF</button>
+<p class="badge">All work is done inside your browser</p>
 </div>
 </section>
 
 <script>
-/* ---------------- Tabs ---------------- */
-
 function showTab(n){
 document.querySelectorAll("section").forEach(s=>s.style.display="none");
 document.getElementById("tab"+n).style.display="block";
@@ -97,6 +148,13 @@ document.getElementById("t"+n).classList.add("active");
 /* ---------------- Resume ---------------- */
 
 function updateCV(){
+
+const preview=document.getElementById("cvPreview");
+const t=cvTemplate.value;
+
+preview.className="";
+if(t==="2") preview.classList.add("cv-template-2");
+
 pName.innerText=name.value||"Your Name";
 pEmail.innerText=email.value;
 pSkills.innerText=skills.value;
@@ -108,11 +166,11 @@ updateCV();
 const { jsPDF } = window.jspdf;
 const doc=new jsPDF();
 doc.text(pName.innerText,10,10);
-doc.text("Email: "+pEmail.innerText,10,20);
+doc.text(pEmail.innerText,10,18);
 doc.text("Skills:",10,30);
-doc.text(pSkills.innerText,10,40);
+doc.text(pSkills.innerText,10,38);
 doc.text("Education:",10,60);
-doc.text(pEdu.innerText,10,70);
+doc.text(pEdu.innerText,10,68);
 doc.save("resume.pdf");
 }
 
@@ -123,7 +181,6 @@ const ctx=canvas.getContext("2d");
 let baseImg=null;
 
 function loadImage(e){
-const file=e.target.files[0];
 const img=new Image();
 img.onload=function(){
 baseImg=img;
@@ -131,20 +188,33 @@ canvas.width=img.width;
 canvas.height=img.height;
 ctx.drawImage(img,0,0);
 }
-img.src=URL.createObjectURL(file);
+img.src=URL.createObjectURL(e.target.files[0]);
 }
 
-function drawText(){
+function drawThumb(){
 if(!baseImg)return;
+
 ctx.drawImage(baseImg,0,0);
-ctx.fillStyle="white";
-ctx.font="bold 40px Arial";
+
+const style=thumbStyle.value;
+const text=thumbText.value;
+
+if(style==="1"){
+ctx.fillStyle="rgba(0,0,0,0.55)";
+ctx.fillRect(0,canvas.height-120,canvas.width,120);
+ctx.fillStyle="#fff";
+ctx.font="bold 48px Arial";
 ctx.textAlign="center";
-ctx.fillText(
-document.getElementById("thumbText").value,
-canvas.width/2,
-canvas.height-40
-);
+ctx.fillText(text,canvas.width/2,canvas.height-40);
+}
+else{
+ctx.fillStyle="rgba(255,255,255,0.85)";
+ctx.fillRect(20,20,canvas.width-40,90);
+ctx.fillStyle="#000";
+ctx.font="bold 36px Arial";
+ctx.textAlign="center";
+ctx.fillText(text,canvas.width/2,80);
+}
 }
 
 function downloadThumb(){
@@ -157,24 +227,21 @@ a.click();
 /* ---------------- Images to PDF ---------------- */
 
 async function imagesToPDF(){
-const files=document.getElementById("imgPdf").files;
+const files=imgPdf.files;
 if(!files.length)return;
 
 const { jsPDF } = window.jspdf;
 const doc=new jsPDF();
 
 for(let i=0;i<files.length;i++){
-const img=await fileToDataURL(files[i]);
-const image=new Image();
-await new Promise(res=>{image.onload=res;image.src=img});
-
+const data=await fileToDataURL(files[i]);
+const img=new Image();
+await new Promise(r=>{img.onload=r;img.src=data});
 const w=doc.internal.pageSize.getWidth();
-const h=image.height*w/image.width;
-
+const h=img.height*w/img.width;
 if(i>0)doc.addPage();
-doc.addImage(image,"JPEG",0,0,w,h);
+doc.addImage(img,"JPEG",0,0,w,h);
 }
-
 doc.save("images.pdf");
 }
 
