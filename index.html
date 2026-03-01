@@ -1,74 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>All-in-One Student Tools</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+body{margin:0;font-family:Arial;background:#0f172a;color:white}
+header{padding:12px;background:#020617;text-align:center;font-size:18px;font-weight:bold}
+nav{display:flex;background:#020617}
+nav button{flex:1;padding:12px;border:0;background:#020617;color:white}
+nav button.active{background:#2563eb}
+section{display:none;padding:12px}
+input,textarea{width:100%;padding:8px;border-radius:5px;border:0;margin-bottom:6px}
+.toolBox{background:#020617;padding:10px;border-radius:8px}
+#cvPreview{background:white;color:black;padding:10px;border-radius:6px}
+canvas{max-width:100%;border-radius:8px;background:#000}
+</style>
+</head>
+<body>
+
+<header>All-in-One Student Tools</header>
+
+<nav>
+<button id="t1" class="active" onclick="showTab(1)">Resume</button>
+<button id="t2" onclick="showTab(2)">Thumbnail</button>
+<button id="t3" onclick="showTab(3)">PDF Tools</button>
+</nav>
+
+<!-- ================= Resume Maker ================= -->
+
+<section id="tab1" style="display:block">
+<div class="toolBox">
+<h3>Resume Maker</h3>
+
+<input id="name" placeholder="Your Name">
+<input id="email" placeholder="Email">
+<textarea id="skills" placeholder="Skills (comma separated)"></textarea>
+<textarea id="education" placeholder="Education"></textarea>
+
+<button onclick="updateCV()">Preview</button>
+<button onclick="downloadCV()">Download PDF</button>
+
+<hr>
+<div id="cvPreview">
+<h2 id="pName">Your Name</h2>
+<p id="pEmail"></p>
+<h4>Skills</h4>
+<p id="pSkills"></p>
+<h4>Education</h4>
+<p id="pEdu"></p>
+</div>
+</div>
+</section>
+
+<!-- ================= Thumbnail Maker ================= -->
+
+<section id="tab2">
+<div class="toolBox">
+<h3>Thumbnail / Poster Maker</h3>
+
+<input type="file" accept="image/*" onchange="loadImage(event)">
+<input id="thumbText" placeholder="Text on thumbnail">
+<button onclick="drawText()">Add Text</button>
+<button onclick="downloadThumb()">Download PNG</button>
+
+<br><br>
+<canvas id="canvas" width="640" height="360"></canvas>
+</div>
+</section>
+
+<!-- ================= PDF Tools ================= -->
+
+<section id="tab3">
+<div class="toolBox">
+<h3>Images to PDF</h3>
+<input type="file" multiple accept="image/*" id="imgPdf">
+<button onclick="imagesToPDF()">Convert & Download PDF</button>
+<p style="font-size:13px;color:#cbd5e1">
+(All processing happens in your browser)
+</p>
+</div>
+</section>
+
 <script>
-function quick(q){
-    document.getElementById("q").value = q;
-    search();
+/* ---------------- Tabs ---------------- */
+
+function showTab(n){
+document.querySelectorAll("section").forEach(s=>s.style.display="none");
+document.getElementById("tab"+n).style.display="block";
+document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));
+document.getElementById("t"+n).classList.add("active");
 }
 
-async function search(){
+/* ---------------- Resume ---------------- */
 
-    const query = document.getElementById("q").value.trim();
-    if(!query) return;
-
-    // words ko alag alag karna
-    const words = query.split(/\s+/).filter(w => w.length > 1);
-
-    // title based flexible query
-    let titleQuery = words.map(w => `title:(${w}*)`).join(" OR ");
-
-    const api =
-      "https://archive.org/advancedsearch.php?q="
-      + encodeURIComponent("(" + titleQuery + ") AND mediatype:(movies)")
-      + "&fl[]=identifier&fl[]=title"
-      + "&rows=20&page=1&output=json";
-
-    const res = await fetch(api);
-    const data = await res.json();
-
-    const list = data.response.docs;
-    const box = document.getElementById("results");
-    box.innerHTML = "";
-
-    if(!list.length){
-        box.innerHTML = "<p>No similar video found.</p>";
-        return;
-    }
-
-    list.forEach(v=>{
-
-        const thumb = "https://archive.org/services/img/" + v.identifier;
-        const watch = "https://archive.org/embed/" + v.identifier;
-        const details = "https://archive.org/details/" + v.identifier;
-
-        const div = document.createElement("div");
-        div.className="card";
-
-        div.innerHTML = `
-            <img class="thumb" src="${thumb}">
-            <div class="info">
-                <h4>${v.title || "No title"}</h4>
-                <div class="actions">
-                    <a href="#" onclick="openPlayer('${watch}');return false;">Play</a>
-                    <a href="${details}" target="_blank">Download</a>
-                </div>
-            </div>
-        `;
-
-        box.appendChild(div);
-    });
-
+function updateCV(){
+pName.innerText=name.value||"Your Name";
+pEmail.innerText=email.value;
+pSkills.innerText=skills.value;
+pEdu.innerText=education.value;
 }
 
-function openPlayer(url){
-    const box = document.getElementById("playerBox");
-    const frame = document.getElementById("playerFrame");
-    frame.src = url;
-    box.style.display="flex";
+async function downloadCV(){
+updateCV();
+const { jsPDF } = window.jspdf;
+const doc=new jsPDF();
+doc.text(pName.innerText,10,10);
+doc.text("Email: "+pEmail.innerText,10,20);
+doc.text("Skills:",10,30);
+doc.text(pSkills.innerText,10,40);
+doc.text("Education:",10,60);
+doc.text(pEdu.innerText,10,70);
+doc.save("resume.pdf");
 }
 
-function closePlayer(){
-    const box = document.getElementById("playerBox");
-    const frame = document.getElementById("playerFrame");
-    frame.src="";
-    box.style.display="none";
+/* ---------------- Thumbnail ---------------- */
+
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
+let baseImg=null;
+
+function loadImage(e){
+const file=e.target.files[0];
+const img=new Image();
+img.onload=function(){
+baseImg=img;
+canvas.width=img.width;
+canvas.height=img.height;
+ctx.drawImage(img,0,0);
+}
+img.src=URL.createObjectURL(file);
+}
+
+function drawText(){
+if(!baseImg)return;
+ctx.drawImage(baseImg,0,0);
+ctx.fillStyle="white";
+ctx.font="bold 40px Arial";
+ctx.textAlign="center";
+ctx.fillText(
+document.getElementById("thumbText").value,
+canvas.width/2,
+canvas.height-40
+);
+}
+
+function downloadThumb(){
+const a=document.createElement("a");
+a.download="thumbnail.png";
+a.href=canvas.toDataURL("image/png");
+a.click();
+}
+
+/* ---------------- Images to PDF ---------------- */
+
+async function imagesToPDF(){
+const files=document.getElementById("imgPdf").files;
+if(!files.length)return;
+
+const { jsPDF } = window.jspdf;
+const doc=new jsPDF();
+
+for(let i=0;i<files.length;i++){
+const img=await fileToDataURL(files[i]);
+const image=new Image();
+await new Promise(res=>{image.onload=res;image.src=img});
+
+const w=doc.internal.pageSize.getWidth();
+const h=image.height*w/image.width;
+
+if(i>0)doc.addPage();
+doc.addImage(image,"JPEG",0,0,w,h);
+}
+
+doc.save("images.pdf");
+}
+
+function fileToDataURL(file){
+return new Promise(res=>{
+const r=new FileReader();
+r.onload=e=>res(e.target.result);
+r.readAsDataURL(file);
+});
 }
 </script>
+
+</body>
+</html>
